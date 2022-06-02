@@ -1,14 +1,13 @@
 #include "orderEngine.h"
 
-
 /**
  * @brief Implementation for LimitOrder class
  */
-void LimitOrder::print() const { 
+void LimitOrder::print(std::ostream& os) const { 
     if (displayQuantity) {
-        std::cout << displayQuantity << "(" << quantity << ")" << "@" << price << "#" << orderId;
+        os << displayQuantity << "(" << quantity << ")" << "@" << price << "#" << orderId;
     } else 
-        std::cout << quantity << "@" << price << "#" << orderId;
+        os << quantity << "@" << price << "#" << orderId;
     }
 void LimitOrder::reduceQuantity(int value) { quantity -= value; }
 void LimitOrder::traded(int value) { totalTrade += value; }
@@ -24,17 +23,15 @@ void MarketOrder::traded(int value) { totalTrade += value; }
  * @brief Implementation for Orderbook class
  * 
  */
-void Orderbook::printOrderbook() {
+void Orderbook::printOrderbook(std::ostream& os) {
     std::cout << "B: ";
     for (auto it = buyLimit.begin(); it != buyLimit.end(); it++) {
-        it->second.print();
-        std::cout << " ";
+        std::cout << it->second << " ";
     }
     std::cout << std::endl;
     std::cout << "S: ";
     for (auto it = sellLimit.begin(); it != sellLimit.end(); it++) {
-        it->second.print();
-        std::cout << " ";
+        std::cout << it->second << " ";
     }
     std::cout << std::endl;
 }

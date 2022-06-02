@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <vector>
 #include <map>
@@ -41,14 +42,17 @@ public:
     void setNewOrderId(std::string _orderId) { orderId = _orderId; }
 
     // functionality
-    void print() const;
+    void print(std::ostream& os) const;
     void reduceQuantity(int value);
     void traded(int value);
 
     // for ICEOrder
     void resetTraded() { totalTrade = 0; }
-
 };
+inline std::ostream& operator <<(std::ostream& os, LimitOrder& order) {
+    order.print(os);
+    return os;
+}
 
 class MarketOrder : public IOrder {
     bool side;
@@ -81,7 +85,7 @@ class Orderbook {
 
 
 public:
-    void printOrderbook();
+    void printOrderbook(std::ostream& os);
     void insertLimitOrder(LimitOrder& o, bool isCRP);
     void matchLimitOrder(LimitOrder& o);
     void removeOrder(std::string orderId, bool isBuy);
@@ -92,3 +96,8 @@ public:
     void cancelReplaceOrder(std::string orderId, int newQuantity, int newPrice);
     void setNewParameters(std::string orderId, int newQuantity, int newPrice, buyOrderIter buyIter, sellOrderIter sellIter);
 };
+
+inline std::ostream& operator <<(std::ostream& os, Orderbook& ob) {
+    ob.printOrderbook(os);
+    return os;
+}
