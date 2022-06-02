@@ -23,11 +23,13 @@ private:
     int price;
     int quantity;
     int totalTrade = 0;
+    int displayQuantity = 0;
 public:
-    explicit LimitOrder(bool _side, std::string _orderId, int _price, int _quantity) : 
-        side(_side), orderId(_orderId), price(_price), quantity(_quantity) {}
+    explicit LimitOrder(bool _side, std::string _orderId, int _price, int _quantity, int _displayQuantity = 0) : 
+        side(_side), orderId(_orderId), price(_price), quantity(_quantity), displayQuantity(_displayQuantity) {}
     // getters
     int getQuantity() const { return quantity; }
+    int getDisplayQuantity() const { return displayQuantity; }
     int getPrice() const { return price; }
     bool isBuy() const { return side; }
     std::string getOrderId() const { return orderId; }
@@ -42,6 +44,9 @@ public:
     void print() const;
     void reduceQuantity(int value);
     void traded(int value);
+
+    // for ICEOrder
+    void resetTraded() { totalTrade = 0; }
 
 };
 

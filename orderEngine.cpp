@@ -4,7 +4,12 @@
 /**
  * @brief Implementation for LimitOrder class
  */
-void LimitOrder::print() const { std::cout << quantity << "@" << price << "#" << orderId; }
+void LimitOrder::print() const { 
+    if (displayQuantity) {
+        std::cout << displayQuantity << "(" << quantity << ")" << "@" << price << "#" << orderId;
+    } else 
+        std::cout << quantity << "@" << price << "#" << orderId;
+    }
 void LimitOrder::reduceQuantity(int value) { quantity -= value; }
 void LimitOrder::traded(int value) { totalTrade += value; }
 
@@ -59,18 +64,18 @@ void Orderbook::matchLimitOrder(LimitOrder& o) {
 
     buyOrderIter buyIter =  buyLimit.begin();
     sellOrderIter sellIter = sellLimit.begin();
-    int tradeQuantity = 0, tradePrice = 0;
-    tradeQuantity = std::min(buyIter->second.getQuantity(), sellIter->second.getQuantity());
-    tradePrice = o.isBuy() ? sellIter->second.getPrice() : buyIter->second.getPrice();
+    // check if either is ICE
+    int tradeQuantity = std::min(
+        buyIter->second.getDisplayQuantity() ? buyIter->second.getDisplayQuantity() : buyIter->second.getQuantity(), 
+        sellIter->second.getDisplayQuantity() ? sellIter->second.getDisplayQuantity() : sellIter->second.getQuantity());
+    int tradePrice = o.isBuy() ? sellIter->second.getPrice() : buyIter->second.getPrice();
     buyIter->second.reduceQuantity(tradeQuantity);
     sellIter->second.reduceQuantity(tradeQuantity);
     if (buyIter->second.getQuantity() == 0) {
-        buyOrderMap.erase(buyIter->second.getOrderId());
-        buyLimit.erase(buyIter);
+        removeOrder(buyIter->second.getOrderId(), true);
     }
     if (sellIter->second.getQuantity() == 0) {
-        sellOrderMap.erase(sellIter->second.getOrderId());
-        sellLimit.erase(sellIter);
+        removeOrder(sellIter->second.getOrderId(), false);
     }
     o.traded(tradeQuantity * tradePrice);
     matchLimitOrder(o);
@@ -82,8 +87,8 @@ void Orderbook::removeOrder(std::string orderId, bool isBuy) {
         buyOrderMap.erase(orderId);
     }
     else {
-        buyLimit.erase(buyOrderMap[orderId]);
-        buyOrderMap.erase(orderId);
+        sellLimit.erase(sellOrderMap[orderId]);
+        sellOrderMap.erase(orderId);
     }
 }
 
@@ -184,3 +189,4 @@ void Orderbook::setNewParameters(std::string orderId, int newQuantity, int newPr
     it->second.setNewPrice(newPrice);
     it->second.setNewQuantity(newQuantity);
 }
+

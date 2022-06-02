@@ -53,6 +53,13 @@ int main() {
                 ob.insertFOKOrder(order);
                 i += 5;
             }
+            else if (orderType == "ICE") {
+                int p = std::stoi(result[i + 5]);
+                int d = std::stoi(result[i + 6]);
+                LimitOrder order(s, n, p, q, d);
+                ob.insertLimitOrder(order, false);
+                i += 6;
+            }
         }
     }
 
