@@ -39,6 +39,7 @@ int main() {
             else if (orderType == "MO") {
                 MarketOrder order(s, n, q);
                 ob.insertMarketOrder(order);
+                std::cout << order.getTotalTraded() << std::endl;
                 i += 4;
             }
             else if (orderType == "IOC") {

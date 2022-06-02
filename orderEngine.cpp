@@ -114,7 +114,6 @@ void Orderbook::insertMarketOrder(MarketOrder& o) {
     }
 
     insertMarketOrder(o);
-    std::cout << o.getTotalTraded() << std::endl;
 }
 
 void Orderbook::cancelOrder(std::string _orderId) {
