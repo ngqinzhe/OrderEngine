@@ -1,10 +1,14 @@
+#ifndef orderEngine_h
+#define orderEngine_h
+
 #pragma once
 #include <iostream>
 #include <vector>
 #include <map>
 #include <unordered_map>
 #include <algorithm>
-#include <queue>
+#include <iomanip>
+#include <chrono>
 
 class IOrder {
 public:
@@ -95,9 +99,13 @@ public:
     void insertFOKOrder(LimitOrder& o);
     void cancelReplaceOrder(std::string orderId, int newQuantity, int newPrice);
     void setNewParameters(std::string orderId, int newQuantity, int newPrice, buyOrderIter buyIter, sellOrderIter sellIter);
+    void parseInput(std::vector<std::string>& result);
 };
 
 inline std::ostream& operator <<(std::ostream& os, Orderbook& ob) {
     ob.printOrderbook(os);
     return os;
 }
+
+
+#endif

@@ -186,3 +186,56 @@ void Orderbook::setNewParameters(std::string orderId, int newQuantity, int newPr
     it->second.setNewQuantity(newQuantity);
 }
 
+void Orderbook::parseInput(std::vector<std::string>& result) {
+    for (int i = 0; i < result.size(); i++) {
+        if (result[i] == "CXL") {
+            std::string orderId = result[i + 1];
+            this->cancelOrder(orderId);
+            i += 1;
+            continue;
+        }
+        else if (result[i] == "CRP") {
+            std::string orderId = result[i + 1];
+            int newQuantity = std::stoi(result[i + 2]);
+            int newPrice = std::stoi(result[i + 3]);
+            this->cancelReplaceOrder(orderId, newQuantity, newPrice);
+        }
+        else if (result[i] == "SUB") {
+            std::string orderType = result[i + 1];
+            bool s = result[i+2] == "B";
+            std::string n = result[i + 3];
+            int q = std::stoi(result[i + 4]);
+            if (orderType == "LO") {
+                int p = std::stoi(result[i + 5]);
+                LimitOrder order(s, n, p, q);
+                this->insertLimitOrder(order, false);
+                i += 5;
+            }
+            else if (orderType == "MO") {
+                MarketOrder order(s, n, q);
+                this->insertMarketOrder(order);
+                std::cout << order.getTotalTraded() << std::endl;
+                i += 4;
+            }
+            else if (orderType == "IOC") {
+                int p = std::stoi(result[i + 5]);
+                LimitOrder order(s, n, p, q);
+                this->insertIOCOrder(order);
+                i += 5;
+            }
+            else if (orderType == "FOK") {
+                int p = std::stoi(result[i + 5]);
+                LimitOrder order(s, n, p, q);
+                this->insertFOKOrder(order);
+                i += 5;
+            }
+            else if (orderType == "ICE") {
+                int p = std::stoi(result[i + 5]);
+                int d = std::stoi(result[i + 6]);
+                LimitOrder order(s, n, p, q, d);
+                this->insertLimitOrder(order, false);
+                i += 6;
+            }
+        }
+    }
+}
