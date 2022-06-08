@@ -67,7 +67,7 @@ class Orderbook {
 public:
     void printOrderbook(std::ostream& os);
     void insertOrder(Order& o, bool isCRP);
-    void matchOrder(Order& o);
+    void matchOrder(Order& o, bool& isICE);
     void removeOrder(std::string orderId, bool isBuy);
     void insertMarketOrder(Order& o);
     void cancelOrder(std::string _orderId);

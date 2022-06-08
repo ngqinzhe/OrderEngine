@@ -40,11 +40,12 @@ void Orderbook::insertOrder(Order& o, bool isCRP) {
         while (currIter->second.getOrderId() != o.getOrderId()) currIter--;
         sellOrderMap[o.getOrderId()] = currIter;
     }
-    matchOrder(o);
-    if (!isCRP) std::cout << o.getTotalTraded() << std::endl;
+    bool isICE = false;
+    matchOrder(o, isICE);
+    if (!isCRP && !isICE) std::cout << o.getTotalTraded() << std::endl;
 }
 
-void Orderbook::matchOrder(Order& o) {
+void Orderbook::matchOrder(Order& o, bool& isICE) {
     if (sellLimit.size() == 0 || buyLimit.size() == 0
         || !(buyLimit.begin()->second.getPrice() >= sellLimit.begin()->second.getPrice())) {
             return;
@@ -53,6 +54,7 @@ void Orderbook::matchOrder(Order& o) {
     buyOrderIter buyIter =  buyLimit.begin();
     sellOrderIter sellIter = sellLimit.begin();
     // check if either is ICE
+    isICE = buyIter->second.getDisplayQuantity() || sellIter->second.getDisplayQuantity() ? true : false;
     int tradeQuantity = std::min(
         buyIter->second.getDisplayQuantity() ? buyIter->second.getDisplayQuantity() : buyIter->second.getQuantity(), 
         sellIter->second.getDisplayQuantity() ? sellIter->second.getDisplayQuantity() : sellIter->second.getQuantity());
@@ -66,7 +68,8 @@ void Orderbook::matchOrder(Order& o) {
         removeOrder(sellIter->second.getOrderId(), false);
     }
     o.traded(tradeQuantity * tradePrice);
-    matchOrder(o);
+    if (isICE) std::cout << tradeQuantity * tradePrice << std::endl;
+    matchOrder(o, isICE);
 }
 
 void Orderbook::insertMarketOrder(Order& o) {
