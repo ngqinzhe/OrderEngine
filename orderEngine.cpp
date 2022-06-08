@@ -1,23 +1,14 @@
 #include "orderEngine.h"
 
 /**
- * @brief Implementation for LimitOrder class
+ * @brief Implementation for Order class
  */
-void LimitOrder::print(std::ostream& os) const { 
+void Order::print(std::ostream& os) const { 
     if (displayQuantity) {
         os << displayQuantity << "(" << quantity << ")" << "@" << price << "#" << orderId;
     } else 
         os << quantity << "@" << price << "#" << orderId;
-    }
-void LimitOrder::reduceQuantity(int value) { quantity -= value; }
-void LimitOrder::traded(int value) { totalTrade += value; }
-
-
-/**
- * @brief Impletation for MarketOrder class
- */
-void MarketOrder::reduceQuantity(int value) { quantity -= value; }
-void MarketOrder::traded(int value) { totalTrade += value; }
+}
 
 /**
  * @brief Implementation for Orderbook class
@@ -36,24 +27,24 @@ void Orderbook::printOrderbook(std::ostream& os) {
     std::cout << std::endl;
 }
 
-void Orderbook::insertLimitOrder(LimitOrder& o, bool isCRP) {
+void Orderbook::insertOrder(Order& o, bool isCRP) {
     if (o.isBuy()) {
-        buyLimit.insert(std::pair<int, LimitOrder>(o.getPrice(), o));
+        buyLimit.insert(std::pair<int, Order>(o.getPrice(), o));
         auto currIter = buyLimit.find(o.getPrice());
         while (currIter->second.getOrderId() != o.getOrderId()) currIter++;
         buyOrderMap[o.getOrderId()] = currIter;
     }
     else {
-        sellLimit.insert(std::pair<int, LimitOrder>(o.getPrice(), o));
+        sellLimit.insert(std::pair<int, Order>(o.getPrice(), o));
         auto currIter = sellLimit.find(o.getPrice());
         while (currIter->second.getOrderId() != o.getOrderId()) currIter--;
         sellOrderMap[o.getOrderId()] = currIter;
     }
-    matchLimitOrder(o);
-    if (!isCRP) std::cout << o.getTotalTrade() << std::endl;
+    matchOrder(o);
+    if (!isCRP) std::cout << o.getTotalTraded() << std::endl;
 }
 
-void Orderbook::matchLimitOrder(LimitOrder& o) {
+void Orderbook::matchOrder(Order& o) {
     if (sellLimit.size() == 0 || buyLimit.size() == 0
         || !(buyLimit.begin()->second.getPrice() >= sellLimit.begin()->second.getPrice())) {
             return;
@@ -75,21 +66,10 @@ void Orderbook::matchLimitOrder(LimitOrder& o) {
         removeOrder(sellIter->second.getOrderId(), false);
     }
     o.traded(tradeQuantity * tradePrice);
-    matchLimitOrder(o);
+    matchOrder(o);
 }
 
-void Orderbook::removeOrder(std::string orderId, bool isBuy) {
-    if (isBuy) {
-        buyLimit.erase(buyOrderMap[orderId]);
-        buyOrderMap.erase(orderId);
-    }
-    else {
-        sellLimit.erase(sellOrderMap[orderId]);
-        sellOrderMap.erase(orderId);
-    }
-}
-
-void Orderbook::insertMarketOrder(MarketOrder& o) {
+void Orderbook::insertMarketOrder(Order& o) {
     // BASE CASE 
     if ((o.getQuantity() == 0) || (o.isBuy() && sellLimit.size() == 0) || (!o.isBuy() && buyLimit.size() == 0)) 
         return;
@@ -125,13 +105,24 @@ void Orderbook::cancelOrder(std::string _orderId) {
     }
 }
 
-void Orderbook::insertIOCOrder(LimitOrder& o) {
+void Orderbook::removeOrder(std::string orderId, bool isBuy) {
+    if (isBuy) {
+        buyLimit.erase(buyOrderMap[orderId]);
+        buyOrderMap.erase(orderId);
+    }
+    else {
+        sellLimit.erase(sellOrderMap[orderId]);
+        sellOrderMap.erase(orderId);
+    }
+}
+
+void Orderbook::insertIOCOrder(Order& o) {
     std::string orderId = o.getOrderId();
-    insertLimitOrder(o, false);
+    insertOrder(o, false);
     cancelOrder(orderId);
 }
 
-void Orderbook::insertFOKOrder(LimitOrder& o) {
+void Orderbook::insertFOKOrder(Order& o) {
     int fokOrderQuantity = o.getQuantity();
     int comparableQuantity = 0;
     // check if order can be fufilled
@@ -139,21 +130,18 @@ void Orderbook::insertFOKOrder(LimitOrder& o) {
         for (auto it = sellLimit.begin(); it != sellLimit.end(); it++) {
             if (o.getPrice() >= it->second.getPrice()) comparableQuantity += it->second.getQuantity();
         }
-        if (comparableQuantity < fokOrderQuantity) {
-            std::cout << "0" << std::endl;
-            return;
-        }
     }
     else {
         for (auto it = buyLimit.begin(); it != buyLimit.end(); it++) {
             if (it->second.getPrice() >= o.getPrice()) comparableQuantity += it->second.getQuantity();
         }
-        if (comparableQuantity < fokOrderQuantity) {
-            std::cout << "0" << std::endl;
-            return;
-        }
     }
-    insertLimitOrder(o, false);
+
+    if (comparableQuantity < fokOrderQuantity) {
+        std::cout << "0" << std::endl;
+        return;
+    }
+    else insertOrder(o, false);
 }
 
 void Orderbook::cancelReplaceOrder(std::string orderId, int newQuantity, int newPrice) {
@@ -162,9 +150,9 @@ void Orderbook::cancelReplaceOrder(std::string orderId, int newQuantity, int new
         if (it->second.getPrice() == newPrice && it->second.getQuantity() >= newQuantity) {
             setNewParameters(orderId, newQuantity, newPrice, it, sellLimit.end());
         } else {
-            LimitOrder newOrder(true, orderId, newPrice, newQuantity);
+            Order newOrder(true, orderId, newQuantity, newPrice);
             removeOrder(orderId, true);
-            insertLimitOrder(newOrder, true);
+            insertOrder(newOrder, true);
         }
     }
     else if (sellOrderMap.find(orderId) != sellOrderMap.end()) {
@@ -172,9 +160,9 @@ void Orderbook::cancelReplaceOrder(std::string orderId, int newQuantity, int new
         if (it->second.getPrice() == newPrice && it->second.getQuantity() >= newQuantity) {
             setNewParameters(orderId, newQuantity, newPrice, buyLimit.end(), it);
         } else {
-            LimitOrder newOrder(false, orderId, newPrice, newQuantity);
+            Order newOrder(false, orderId, newQuantity, newPrice);
             removeOrder(orderId, false);
-            insertLimitOrder(newOrder, true);
+            insertOrder(newOrder, true);
         }
     }
 }
@@ -207,33 +195,33 @@ void Orderbook::parseInput(std::vector<std::string>& result) {
             int q = std::stoi(result[i + 4]);
             if (orderType == "LO") {
                 int p = std::stoi(result[i + 5]);
-                LimitOrder order(s, n, p, q);
-                this->insertLimitOrder(order, false);
+                Order order(s, n, q, p);
+                this->insertOrder(order, false);
                 i += 5;
             }
             else if (orderType == "MO") {
-                MarketOrder order(s, n, q);
+                Order order(s, n, q);
                 this->insertMarketOrder(order);
                 std::cout << order.getTotalTraded() << std::endl;
                 i += 4;
             }
             else if (orderType == "IOC") {
                 int p = std::stoi(result[i + 5]);
-                LimitOrder order(s, n, p, q);
+                Order order(s, n, q, p);
                 this->insertIOCOrder(order);
                 i += 5;
             }
             else if (orderType == "FOK") {
                 int p = std::stoi(result[i + 5]);
-                LimitOrder order(s, n, p, q);
+                Order order(s, n, q, p);
                 this->insertFOKOrder(order);
                 i += 5;
             }
             else if (orderType == "ICE") {
                 int p = std::stoi(result[i + 5]);
                 int d = std::stoi(result[i + 6]);
-                LimitOrder order(s, n, p, q, d);
-                this->insertLimitOrder(order, false);
+                Order order(s, n, q, p, d);
+                this->insertOrder(order, false);
                 i += 6;
             }
         }
